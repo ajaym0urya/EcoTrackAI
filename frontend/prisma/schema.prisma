@@ -1,0 +1,48 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Bill {
+  id               String    @id @default(uuid())
+  utilityType      String    // "electricity", "gas", "water"
+  consumptionValue Float
+  unit             String    // "kWh", "therms", "gallons", "m3", etc.
+  emissions        Float     // In kg CO2e
+  startDate        DateTime?
+  endDate          DateTime?
+  fileName         String
+  createdAt        DateTime  @default(now())
+}
+
+model EmissionFactor {
+  id          String   @id @default(uuid())
+  utilityType String   @unique // "electricity", "gas", "water"
+  factor      Float    // e.g. 0.389 for electricity
+  unit        String   // unit the factor applies to, e.g., "kWh" or "m3"
+  region      String   // e.g. "US-Average"
+  updatedAt   DateTime @updatedAt
+}
+
+model Action {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  utilityType String   // "electricity", "gas", "water", "general"
+  savings     Float    // Estimated kg CO2e saved monthly
+  difficulty  String   // "easy", "medium", "hard"
+  userActions UserAction[]
+}
+
+model UserAction {
+  id          String    @id @default(uuid())
+  actionId    String
+  action      Action    @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  status      String    // "active", "completed"
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+}
